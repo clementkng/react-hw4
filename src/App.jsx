@@ -18,6 +18,11 @@ class App extends React.Component {
 
     this.state = {
       // TODO 1
+      items: [],
+      nextItemId: 0,
+      sessionIsRunning: false,
+      itemIdRunning: null,
+      areItemsMarkedAsCompleted: false
     };
   }
 
@@ -25,29 +30,75 @@ class App extends React.Component {
     const { nextItemId } = this.state;
     const newItem = {
       // TODO 2: initialize new item object
+      id: this.state.nextItemId,
+      description: description,
+      sessionsCompleted: 0,
+      isCompleted: false
     };
     this.setState((prevState => ({
       // TODO 2: append new items to list and increase nextItemId by 1
+      nextItemId: prevState.nextItemId + 1,
+      items: prevState.items.concat(newItem)
     })));
   }
 
   clearCompletedItems() {
-    // TODO 6
+    // TODO 6 (or 7?)
+    this.setState((prevState => ({
+      items: prevState.items.filter(item => !item.isCompleted)
+    })));
+    // Ensure timer disappears if clear entire list
+    if (this.state.items.length === 0) {
+      this.setState({
+        sessionIsRunning: false
+      })
+    }
   }
 
   increaseSessionsCompleted(itemId) {
     // TODO 5
+    // Can probably try w/ filter and spreading, but not sure how to get index or slicing
+    const updatedItems = this.state.items.slice();
+    for (let i = 0; i < this.state.items.length; i++) {
+      if (updatedItems[i].id === itemId) {
+        updatedItems[i].sessionsCompleted++;
+        break;
+      }
+    }
+    this.setState((setState => ({
+      items: updatedItems,
+    })));
   }
 
   toggleItemIsCompleted(itemId) {
     // TODO 6
+    const updatedItems = this.state.items.slice();
+    let areItems = false;
+    for (let i = 0; i < this.state.items.length; i++) {
+      if (updatedItems[i].id === itemId) {
+        updatedItems[i].isCompleted = !updatedItems[i].isCompleted;
+      }
+      // Unsure if this is how we're supposed to update the areItems state
+      if (updatedItems[i].isCompleted) {
+        areItems = true;
+      }
+    }
+    this.setState((setState => ({
+      items: updatedItems,
+      areItemsMarkedAsCompleted: areItems
+    })));
   }
 
   startSession(id) {
     // TODO 4
+    this.setState({
+      sessionIsRunning: true,
+      itemIdRunning: id
+    })
   }
 
   render() {
+    console.log(this.state.items);
     const {
       items,
       sessionIsRunning,
@@ -59,16 +110,34 @@ class App extends React.Component {
         <div className="container">
           <header>
             <h1 className="heading">Today</h1>
-            <ClearButton onClick={this.clearCompletedItems} />
+            {areItemsMarkedAsCompleted &&
+              <ClearButton onClick={this.clearCompletedItems} />
+            }
           </header>
-          {/* TODO 4 */}
-            {/* <Timer
+          {sessionIsRunning &&
+            <Timer
               mode="WORK"
-              onSessionComplete={() => { console.log("complete") }}
+              // onSessionComplete={() => { console.log("complete") }}
+              onSessionComplete={() => this.increaseSessionsCompleted(itemIdRunning)}
               autoPlays
-            /> */}
+              key={itemIdRunning}
+            /> }
             <div className="items-container">
-            {/* TODO 3:  display todo items */}
+            {items.length !== 0 ?
+            (items.map((item) => (
+              <TodoItem
+                description={item.description}
+                sessionsCompleted={item.sessionsCompleted}
+                isCompleted={item.isCompleted}
+                startSession={() => this.startSession(item.id)}
+                toggleIsCompleted={() => this.toggleItemIsCompleted(item.id)}
+                key={item.id}
+              />
+            )
+            )) : (
+              <EmptyState />
+            )
+          }
             </div>
         </div>
         <footer>
